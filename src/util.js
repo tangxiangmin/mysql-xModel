@@ -1,4 +1,6 @@
 
+
+
 // 将node内置库方法promise化
 exports.promiseify = function promiseify(func, ctx){
     return function(){
@@ -14,7 +16,27 @@ exports.promiseify = function promiseify(func, ctx){
                 }
             };
             args.push(cb);
+
+            // todo 处理返回值
             func.apply(ctx, args);
         });
     };
+};
+
+// 异步测试
+exports.promiseDescribe = (describeName, task, assertFunc)=>{
+    describe(describeName, function () {
+        let globalVal = {};
+        beforeEach(function (done) {
+            task(globalVal, done);
+        });
+
+        if (assertFunc instanceof Array) {
+            assertFunc.forEach(func => {
+                func(globalVal);
+            });
+        } else {
+            assertFunc(globalVal);
+        }
+    });
 };

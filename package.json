@@ -9,9 +9,13 @@
   "author": "shymean",
   "license": "MIT",
   "dependencies": {
-    "mysql": "^2.14.0"
+    "is": "^3.2.1",
+    "mysql": "^2.14.0",
+    "sqlstring": "^2.2.0"
   },
   "devDependencies": {
-    "log4js": "^2.3.1"
+    "chai": "^4.1.0",
+    "log4js": "^2.3.1",
+    "mocha": "^3.4.2"
   }
 }
