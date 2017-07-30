@@ -1,13 +1,25 @@
 {
-  "name": "xmodel",
+  "name": "mysql-xmodel",
   "version": "1.0.0",
-  "description": "",
+  "description": "a simple model class base on mysqljs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tangxiangmin/mysql-xModel.git"
+  },
+  "keywords": [
+    "mysql",
+    "model"
+  ],
   "author": "shymean",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tangxiangmin/mysql-xModel/issues"
+  },
+  "homepage": "https://github.com/tangxiangmin/mysql-xModel#readme",
   "dependencies": {
     "is": "^3.2.1",
     "mysql": "^2.14.0",
@@ -15,7 +27,6 @@
   },
   "devDependencies": {
     "chai": "^4.1.0",
-    "log4js": "^2.3.1",
-    "mocha": "^3.4.2"
+    "log4js": "^2.3.1"
   }
 }

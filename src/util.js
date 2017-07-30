@@ -1,4 +1,24 @@
+let SqlString = require("sqlstring");
+let log4js = require("log4js");
 
+let logger = log4js.getLogger();
+logger.level = "debug";
+exports.logger = logger;
+
+exports.formateCondition = function formateCondition(key, logic, value) {
+    if(typeof value === "undefined"){
+        value = logic;
+        logic = " = ";
+    }
+
+    // inner join
+    // eg: a.id = b.userId
+    if (!~(value+"").indexOf(".")){
+        value = SqlString.escape(value);
+    }
+
+    return key + logic + value ;
+};
 
 
 // 将node内置库方法promise化

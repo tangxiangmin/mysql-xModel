@@ -3,12 +3,12 @@
  */
 let assert = require("assert");
 
-let DB = require("../src/DB");
-let Model = require("../src/Model");
+let Model = require("../index");
 
-describe("#pool", function(){
-    it("pool应为单例对象", function(){
-        let m = new Model("shymean_test");
-        assert.equal(m.pool, DB.pool);
+describe("Pool", function(){
+    it("pool should be single instance", function(){
+        let m_1 = new Model("shymean_test");
+        let m_2 = new Model("shymean_test");
+        assert.equal(m_1.pool, m_2.pool);
     });
 });

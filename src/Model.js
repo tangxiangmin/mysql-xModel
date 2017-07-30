@@ -2,43 +2,33 @@
  * Created by admin on 2017/7/29.
  */
 let is = require("is");
-let logger =  require("./logger");
 let SqlString = require("sqlstring");
-
-let pool = require("./pool");
-
 let util = require("./util");
-let { promiseify } = util;
+
+let DB = require("./DB");
+
+let { formateCondition } = util;
 
 let Model = function (tablename) {
-    this.pool = pool;
+
+    if (is.empty(Model.pool)){
+        throw new Error("use Model.init(config) before create a model instance");
+    }
+
+    this.pool = Model.pool;
     this.name = tablename;
 
     this.latestSql = "";
     this.reset();
 };
 
-function formateCondition(key, logic, value) {
-    if(typeof value === "undefined"){
-        value = logic;
-        logic = " = ";
-    }
-
-    // inner join
-    // eg: a.id = b.userId
-    if (!~(value+"").indexOf(".")){
-        value = SqlString.escape(value);
-    }
-
-    return key + logic + value ;
-}
+// copy the shortcut methods from DB
+Object.assign(Model, DB);
 
 //============base============//
 
 Object.assign(Model.prototype, {
     reset(){
-        this.sql = "";
-
         this._where = "";
         this._tableName = this.name;
 
@@ -55,23 +45,9 @@ Object.assign(Model.prototype, {
             union: "",
         };
     },
-    get(){
-        let { sql, pool } = this;
-
-        if (is.empty(sql)){
-            throw new Error("must set sql before get()");
-        }
-
-        this.latestSql = sql;
-        this.reset();
-
-        return promiseify(pool.query, pool)(sql);
+    query(sql, values){
+        return Model.query(sql, values);
     },
-});
-
-//============select============//
-Object.assign(Model.prototype, {
-
     select(fields){
         let sql = "SELECT %distinct% %field% FROM %table% %join% %where% %group% %having% %order% %limit% %offset% %UNION%";
 
@@ -87,9 +63,50 @@ Object.assign(Model.prototype, {
         });
 
         this.sql = sql;
+        this.reset();
 
-        return this;
+        return this.query(sql);
     },
+    insert(values){
+        let sql = `INSERT INTO ${this._tableName} SET ?`;
+        sql = SqlString.format(sql, values);
+
+        this.sql = sql;
+
+        return this.query(sql).then(res=>{
+            return res.insertId;
+        });
+    },
+    update(values){
+        if (is.empty(this._where)){
+            throw new Error("WHERE statements must be used in UPDATE operation");
+        }
+
+        let sql = `UPDATE ${this._tableName} SET ? ${this._where}`;
+
+        sql = SqlString.format(sql, values);
+
+        this.sql = sql;
+        return this.query(sql).then(res=>{
+            return res.changedRows;
+        });
+    },
+    delete(){
+        if (is.empty(this._where)){
+            throw new Error("WHERE statements must be used in DELETE operation");
+        }
+
+        let sql = `DELETE FROM ${this._tableName} ${this._where}`;
+        this.sql = sql;
+
+        return this.query(sql).then(res=>{
+            return res.affectedRows;
+        });
+    },
+});
+
+//============select============//
+Object.assign(Model.prototype, {
 
     // DISTINCT
     distinct(){
@@ -187,6 +204,8 @@ Object.assign(Model.prototype, {
     },
 });
 
+//============update============//
+// todo: aggregate
 //============aggregate============//
 Object.assign(Model.prototype, {
     // 聚合函数

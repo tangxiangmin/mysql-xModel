@@ -2,7 +2,6 @@
  * Created by admin on 2017/7/29.
  */
 
-let config = require("../config/db.json");
 let mysql = require("mysql");
 
 let getPool = (function () {
@@ -15,4 +14,4 @@ let getPool = (function () {
     };
 })();
 
-module.exports = getPool(config);
+module.exports = getPool;
