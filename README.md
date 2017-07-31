@@ -6,6 +6,11 @@ xModel
 * `Promise`化，告别回调地狱
 * 简洁的api，支持链式调用
 
+### todo
+* [ ] 聚集函数
+* [x] select支持计算字段
+* [x] select支持字段别名
+
 ## Step
 ```
 npm i mysql-xmodel -S
