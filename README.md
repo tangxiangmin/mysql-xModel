@@ -7,9 +7,12 @@ xModel
 * 简洁的api，支持链式调用
 
 ### todo
-* [ ] 聚集函数
-* [x] select支持计算字段
-* [x] select支持字段别名
+* [ ] 格式化数据，如时间戳，数据分组等
+* [ ] 事务处理
+* [ ] 目前只支持连接单个数据库
+
+### bug
+* 异步导致`sql`属性返回值错乱，需要进行调试
 
 ## Step
 ```
@@ -39,6 +42,15 @@ admin.where("id", 1).select(["id", "name", "password"]).then(res=>{
     console.log(admin.sql)
 })
 ```
+
+### query
+执行原始SQL语句
+```
+admin.query(sql, values).then(res=>{
+    // result
+})
+```
+
 ### where
 `where(key, logic, value)`用来配置`WHERE`子句，当逻辑操作符是`=`时可省略
 ```
@@ -85,6 +97,7 @@ article.alias("a").join("shymean_article_tag AS t", "a.id", "t.article_id")
     //SELECT  `a`.`title`, `t`.`tag_id` FROM shymean_article AS a , shymean_article_tag AS t  WHERE a.id = t.article_id                
 });
 ```
+`leftJoin(table, key, logic, value)`和`rightJoin(table, key, logic, value)`参数同上，分别对应左联结和右联结
 ### groupBy
 `groupBy(field)`用于设置分组
 
@@ -124,3 +137,11 @@ admin.where("id", 19).delete().then((length) => {
     // affectedRows
 });
 ```
+
+### 聚集函数
+提供了相关聚集函数的快捷方式
+* `count()`，返回行数
+* `max(field)`，返回对应字段最大值
+* `min(field)`，返回对应字段最小值
+* `avg(field)`，返回平均值
+* `sum(field)`，求和

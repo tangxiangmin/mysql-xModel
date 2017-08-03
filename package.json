@@ -1,6 +1,6 @@
 {
   "name": "mysql-xmodel",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "a simple model class base on mysqljs",
   "main": "index.js",
   "scripts": {

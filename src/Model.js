@@ -26,6 +26,24 @@ let Model = function (tablename) {
 Object.assign(Model, DB);
 
 //============base============//
+Object.assign(Model.prototype, {
+    query(sql, values){
+        return Model.query(sql, values).catch(err=>{
+            console.log(sql);
+        });
+    },
+    raw(){
+        // todo 返回不转义的原生语句
+    },
+    escape(val){
+        return SqlString.escape(val);
+    },
+    escapeId(key){
+        return SqlString.escapeId(key);
+    }
+
+});
+
 
 Object.assign(Model.prototype, {
     reset(){
@@ -45,9 +63,7 @@ Object.assign(Model.prototype, {
             union: "",
         };
     },
-    query(sql, values){
-        return Model.query(sql, values);
-    },
+
     select(fields){
         let sql = "SELECT %distinct% %field% FROM %table% %join% %where% %group% %having% %order% %limit% %offset% %UNION%";
 
@@ -88,15 +104,20 @@ Object.assign(Model.prototype, {
             return res.insertId;
         });
     },
-    update(values){
+    update(data){
         if (is.empty(this._where)) {
             throw new Error("WHERE statements must be used in UPDATE operation");
         }
 
-        let sql = `UPDATE ${this._tableName} SET ? ${this._where}`;
+        // todo 默认的转义无法使用计算字段
+        let fileds = [];
+        for (let key in data){
+            if (data.hasOwnProperty(key)){
+                fileds.push(`${this.escapeId(key)} = ${this.escape(data[key])}`);
+            }
+        }
 
-        sql = SqlString.format(sql, values);
-
+        let sql = `UPDATE ${this._tableName} SET ${fileds.join(", ")} ${this._where}`;
         this.sql = sql;
         return this.query(sql).then(res => {
             return res.changedRows;
@@ -134,15 +155,19 @@ Object.assign(Model.prototype, {
         this._tableName = this._tableName + " AS " + name;
         return this;
     },
+    _join(table, key, logic, value, type = "INNER"){
+        this._selectClause.join += `${type} JOIN ${table} ON ${formateCondition(key, logic, value)}`;
+    },
     join(table, key, logic, value){
-        this._selectClause.join += ", " + table;
-
-        if (is.empty(this._where)) {
-            this.where(key, logic, value);
-        } else {
-            this.andWhere(key, logic, value);
-        }
-
+        this._join(table, key, logic, value);
+        return this;
+    },
+    leftJoin(table, key, logic, value){
+        this._join(table, key, logic, value, "LEFT");
+        return this;
+    },
+    rightJoin(table, key, logic, value){
+        this._join(table, key, logic, value, "RIGHT");
         return this;
     },
 
@@ -178,7 +203,7 @@ Object.assign(Model.prototype, {
             throw new Error("groupBy() need at least one column");
         }
 
-        this._selectClause.group = " GROUP BY " + SqlString.escapeId(field);
+        this._selectClause.group = " GROUP BY " + this.escapeId(field);
         return this;
     },
     having(key, logic, value){
@@ -194,42 +219,71 @@ Object.assign(Model.prototype, {
     orderBy(field, logic = "DESC"){
 
         if (is.empty(this._selectClause.order)) {
-            this._selectClause.order = " ORDER BY " + SqlString.escapeId(field) + " " + logic;
+            this._selectClause.order = " ORDER BY " + this.escapeId(field) + " " + logic;
         } else {
-            this._selectClause.order += ", " + SqlString.escapeId(field) + " " + logic;
+            this._selectClause.order += ", " + this.escapeId(field) + " " + logic;
         }
         return this;
     },
 
     // LIMIT
     limit(size){
-        this._selectClause.limit = " LIMIT " + SqlString.escape(size);
+        size = parseInt(size, 10);
+        if (isNaN(size)){
+            throw new Error("LIMIT size is not a number");
+        }
+        this._selectClause.limit = " LIMIT " + this.escape(size);
         return this;
     },
     offset(size){
         if (is.empty(this._selectClause.limit)) {
             throw new Error("OFFSET must use after LIMIT clause");
         }
-        this._selectClause.offset = " OFFSET " + SqlString.escape(size);
+
+        size = parseInt(size, 10);
+        if (isNaN(size)){
+            throw new Error("OFFSET size is not a number");
+        }
+
+        this._selectClause.offset = " OFFSET " + this.escape(size);
         return this;
     },
 });
 
-//============update============//
-// todo: aggregate
 //============aggregate============//
 Object.assign(Model.prototype, {
     // 聚合函数
     count(){
+        return this.select("COUNT(*) AS total").then(res=>{
+            return res[0] && res[0].total;
+        });
     },
     max(field){
+        return this.select(`MAX(${field}) AS max`).then(res=>{
+            return res[0] && res[0].max;
+        });
     },
     min(field){
+        return this.select(`MIN(${field}) AS min`).then(res=>{
+            return res[0] && res[0].min;
+        });
     },
     avg(field){
+        return this.select(`AVG(${field}) AS avg`).then(res=>{
+            return res[0] && res[0].avg;
+        });
     },
-    sum(){
+    sum(field){
+        return this.select(`SUM(${field}) AS sum`).then(res=>{
+            return res[0] && res[0].sum;
+        });
     },
+    // todo : 转换成无引号的sql语句
+    // increment(field, step = 1){
+    //     let values = {};
+    //     values[field] = `${field} + ${step}`;
+    //     return this.update(values);
+    // }
 });
 
 module.exports = Model;

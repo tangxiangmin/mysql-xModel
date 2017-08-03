@@ -11,7 +11,7 @@ Model.init(config);
 
 let admin = new Model("shymean_admin");
 
-describe("Model", function () {
+describe.only("Model", function () {
     context("#where", function () {
         promiseDescribe("=", function (globalVal, done) {
             admin.where("id", 1).select().then((res) => {
@@ -95,8 +95,28 @@ describe("Model", function () {
         context("#join", function () {
             let article = new Model("shymean_article");
 
-            promiseDescribe("base", function (globalVal, done) {
+            promiseDescribe("inner join", function (globalVal, done) {
                 article.alias("a").join("shymean_article_tag AS t", "a.id", "t.article_id").select(["a.title", "t.tag_id"]).then((res) => {
+                    globalVal.length = res.length;
+                    done();
+                });
+            }, function (globalVal) {
+                it("should return rows", function () {
+                    assert.isNumber(globalVal.length);
+                });
+            });
+            promiseDescribe("left join", function (globalVal, done) {
+                article.alias("a").leftJoin("shymean_article_tag AS t", "a.id", "t.article_id").select(["a.title", "t.tag_id"]).then((res) => {
+                    globalVal.length = res.length;
+                    done();
+                });
+            }, function (globalVal) {
+                it("should return rows", function () {
+                    assert.isNumber(globalVal.length);
+                });
+            });
+            promiseDescribe("right join", function (globalVal, done) {
+                article.alias("a").rightJoin("shymean_article_tag AS t", "a.id", "t.article_id").select(["a.title", "t.tag_id"]).then((res) => {
                     globalVal.length = res.length;
                     done();
                 });
@@ -130,29 +150,41 @@ describe("Model", function () {
                 });
             });
         });
+        context("#limit", function () {
 
-        promiseDescribe("limit", function (globalVal, done) {
-            admin.limit(2).select(["id", "name"]).then(res => {
-                globalVal.length = res.length;
-                done();
+            promiseDescribe("base", function (globalVal, done) {
+                admin.limit(2).select(["id", "name"]).then(res => {
+                    globalVal.length = res.length;
+                    done();
+                });
+            }, function (globalVal) {
+                it("should return 2 rows", function () {
+                    assert.equal(2, globalVal.length);
+                });
             });
-        }, function (globalVal) {
-            it("should return 2 rows", function () {
-                assert.equal(2, globalVal.length);
+            promiseDescribe("size is a number-string", function (globalVal, done) {
+                admin.limit("2").select(["id", "name"]).then(res => {
+                    globalVal.length = res.length;
+                    done();
+                });
+            }, function (globalVal) {
+                it("should parse size to a number", function () {
+                    assert.equal(2, globalVal.length);
+                });
             });
+
+            promiseDescribe("offset", function (globalVal, done) {
+                admin.limit(1).offset(1).select(["id", "name"]).then(res => {
+                    globalVal.name = res[0].name;
+                    done();
+                });
+            }, function (globalVal) {
+                it("should return the second row", function () {
+                    assert.equal("txm", globalVal.name);
+                });
+            });
+
         });
-
-        promiseDescribe("offset", function (globalVal, done) {
-            admin.limit(1).offset(1).select(["id", "name"]).then(res => {
-                globalVal.name = res[0].name;
-                done();
-            });
-        }, function (globalVal) {
-            it("should return the second row", function () {
-                assert.equal("txm", globalVal.name);
-            });
-        });
-
     });
 
     promiseDescribe("#insert", function (globalVal, done) {
@@ -171,7 +203,7 @@ describe("Model", function () {
 
     promiseDescribe("#udpate", function (globalVal, done) {
         admin.where("id", 18).update({
-            name: "test_update",
+            name: "test_upda'te",
             password: "1234",
         }).then((length) => {
             globalVal.length = length;
